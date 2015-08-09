@@ -26,7 +26,7 @@ namespace Map
             List<string> wayNodes = new List<string>();
 
             XmlDocument xDoc = new XmlDocument();
-            xDoc.Load(@"C:\Users\Aaron\Downloads\map.osm");
+            xDoc.Load("map.osm");
             XmlNode bounds = xDoc.SelectSingleNode("//osm/bounds");
             minLat = Convert.ToDouble(bounds.Attributes["minlat"].Value);
             maxLat = Convert.ToDouble(bounds.Attributes["maxlat"].Value);

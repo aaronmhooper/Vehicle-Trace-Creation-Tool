@@ -4,3 +4,9 @@ c:\users\aaron\documents\visual studio 2015\Projects\Map\Map\bin\Debug\Map.exe
 c:\users\aaron\documents\visual studio 2015\Projects\Map\Map\bin\Debug\Map.pdb
 c:\users\aaron\documents\visual studio 2015\Projects\Map\Map\obj\Debug\Map.exe
 c:\users\aaron\documents\visual studio 2015\Projects\Map\Map\obj\Debug\Map.pdb
+C:\Users\Aaron\Documents\GitHubVisualStudio\Vehicle-Trace-Creation-Tool\Map\Map\bin\Debug\Map.exe.config
+C:\Users\Aaron\Documents\GitHubVisualStudio\Vehicle-Trace-Creation-Tool\Map\Map\obj\Debug\Map.exe
+C:\Users\Aaron\Documents\GitHubVisualStudio\Vehicle-Trace-Creation-Tool\Map\Map\obj\Debug\Map.pdb
+C:\Users\Aaron\Documents\GitHubVisualStudio\Vehicle-Trace-Creation-Tool\Map\Map\bin\Debug\Map.exe
+C:\Users\Aaron\Documents\GitHubVisualStudio\Vehicle-Trace-Creation-Tool\Map\Map\bin\Debug\Map.pdb
+C:\Users\Aaron\Documents\GitHubVisualStudio\Vehicle-Trace-Creation-Tool\Map\Map\obj\Debug\Map.csprojResolveAssemblyReference.cache
