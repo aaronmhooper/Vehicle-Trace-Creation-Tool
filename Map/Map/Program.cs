@@ -7,6 +7,9 @@ using System.Threading.Tasks;
 using System.IO;
 using System.Xml;
 using System.Xml.Linq;
+using System.Drawing;
+using System.Windows.Forms;
+
 
 
 namespace Map
@@ -19,11 +22,14 @@ namespace Map
             double maxLat = 0;
             double minLon = 0;
             double maxLon = 0;
-            int i = 0;
-            string id, roadType = "";
+            string roadType = "";
             List<node> allNodes = new List<node>();
-            List<Road> allRoads = new List<Road>();
+            List<point> tempPoints = new List<point>();
+            List<link> allLinks = new List<link>();
             List<string> wayNodes = new List<string>();
+            List<Car> allCars = new List<Car>();
+            int carID = 1;
+            Random rnd = new Random();
 
             XmlDocument xDoc = new XmlDocument();
             xDoc.Load("map.osm");
@@ -49,21 +55,116 @@ namespace Map
                 child = n.SelectNodes(".//tag");
                 foreach(XmlNode b in child)
                 {
-                    if (b.Attributes["k"].Value=="highway"&&b.Attributes["v"].Value!="footway")
+                    if (b.Attributes["k"].Value=="highway"&&b.Attributes["v"].Value!="footway"&&b.Attributes["v"].Value!="track"&&b.Attributes["v"].Value!="cycleway"&&b.Attributes["v"].Value!="pedestrian" && b.Attributes["v"].Value != "rest_area")
                     {
                         roadType = b.Attributes["v"].Value;
-                        Console.WriteLine(roadType);
-                        allRoads.Add(new Road(n.Attributes["id"].Value, allNodes, wayNodes, roadType));
+                        foreach(string str in wayNodes)
+                        {
+                            for (int i = 0; i < allNodes.Count; i++)
+                            {
+                                if (allNodes[i].id == str)
+                                {
+                                    tempPoints.Add(new point(allNodes[i].x, allNodes[i].y));
+                                }
+                            }
+                        }
+                        for (int k = 0; k < tempPoints.Count - 1; k++)
+                        {
+                            allLinks.Add(new link(tempPoints[k].x, tempPoints[k].y, tempPoints[k + 1].x, tempPoints[k + 1].y, roadType));
+                        }
                     }
                 }
+                tempPoints.Clear();
                 wayNodes.Clear();
-            }
-            foreach(Road r in allRoads)
+            } 
+            
+            for(int i=0; i<100; i++)
             {
-                Console.WriteLine(r.id + " " + r.roadType);
+                int index = rnd.Next(allLinks.Count);
+                allCars.Add(new Car(allLinks[index].x1, allLinks[index].y1, index, carID));
+                carID++;
+            }
+            
+            /*while (true)
+            {
+                foreach (Car c in allCars)
+                {
+                    if (c.time <= 2000)
+                    {
+                        Console.Write("\"" + c.time.ToString("0000.00") + " " + c.id + " " + c.xStart + " " + c.yStart + " ");
+                        c.moveCar(allLinks[c.linkIndex].x2, allLinks[c.linkIndex].y2, allLinks[c.linkIndex].velocity);
+                        for (int i = 0; i < allLinks.Count; i++)
+                        {
+                            if (allLinks[c.linkIndex].x2 == allLinks[i].x1 && allLinks[c.linkIndex].y2 == allLinks[i].y1)
+                                c.linkIndex = i;
+                            else
+                                Console.Write("error");
+                            
+                        }
+                        Console.Write(c.xEnd + " " + c.yEnd + " " + c.duration.ToString("0.00") + "\",\n");
+                        c.xStart = c.xEnd;
+                        c.yStart = c.yEnd;
+                        c.xEnd = allLinks[c.linkIndex].x2;
+                        c.yEnd = allLinks[c.linkIndex].y2;
+                    }
+                }
+            }*/
+            
+        }
+        struct link
+        {
+            private string roadType;
+            public double x1, y1, x2, y2, velocity;
+            public link(double x1, double x2, double y1, double y2, string roadType)
+            {
+                this.roadType = roadType;
+                this.x1 = x1;
+                this.x2 = x2;
+                this.y1 = y1;
+                this.y2 = y2;
+                switch (roadType)
+                {
+                    case "residential":
+                        velocity = 11.176;
+                        break;
+                    case "service":
+                        velocity = 15.6464;
+                        break;
+                    case "trunk_link":
+                        velocity = 11.176;
+                        break;
+                    case "tertiary":
+                        velocity = 20.1168;
+                        break;
+                    case "motorway_link":
+                        velocity = 15.6464;
+                        break;
+                    case "trunk":
+                        velocity = 24.5872;
+                        break;
+                    case "primary":
+                        velocity = 20.1168;
+                        break;
+                    case "motorway":
+                        velocity = 29.0576;
+                        break;
+                    default:
+                        velocity = 15.6464;
+                        break;
+
+                }
+            }
+        }
+        struct point
+        {
+            public double x;
+            public double y;
+            public point(double x, double y)
+            {
+                this.x = x;
+                this.y = y;
             }
 
-            
         }
         public static double distance(double lat1, double lon1, double lat2, double lon2)
         {
@@ -78,84 +179,32 @@ namespace Map
             dist = rad * f;
             return dist;
         }
-    }
-
-
         public class Car
         {
-            private double speed, xPosInit, yPosInit, time, spacing, length, xPosFin, yPosFin;
-            public Car(double xPosInit,double yPosInit,double spacing,double length,double speed)
+            public double time, duration, xStart, yStart, xEnd, yEnd, velocity;
+            public int id, linkIndex;
+            public Car (double xStart, double yStart, int linkIndex, int id)
             {
-                this.xPosInit = xPosInit;
-                this.yPosInit = yPosInit;
-                this.spacing = spacing;
-                this.length = length;
-                this.speed = speed;
-            }
-
-        }
-        public class Road
-        {
-            private List<link> allLinks = new List<link>();
-            public List<point> allPoints = new List<point>();
-            public string id, roadType;
-            private struct link
-            {
-                public double slope, x1, x2, y1, y2;
-                public link(double x1, double x2, double y1, double y2)
-                {
-                    this.x1 = x1;
-                    this.x2 = x2;
-                    this.y1 = y1;
-                    this.y2 = y2;
-                    this.slope = (y2 - y1) / (x2 - x1);
-                }
-            }
-            public struct point
-            {
-                public double x, y;
-                public point(double x, double y)
-                {
-                    this.x = x;
-                    this.y = y;
-                }
-            }
-            public Road()
-            {
-
-            }
-            public Road(string id, List<node> allNodes, List<string> wayNodes, string roadType)
-            {
+                this.time = 0.0;
+                this.xStart = xStart;
+                this.yStart = yStart;
+                this.linkIndex = linkIndex;
                 this.id = id;
-                this.roadType = roadType;
-                for(int i=0;i<wayNodes.Count;i++)
-                {
-                    for(int j=0; j<allNodes.Count; j++)
-                    {
-                        if (allNodes[j].id==wayNodes[i])
-                        {
-                            allPoints.Add(new point(allNodes[j].x, allNodes[j].y));
-                        }
-                    }
-                }
-                for(int k=0;k<allPoints.Count-1;k++)
-                {
-                    allLinks.Add(new link(allPoints[k].x, allPoints[k].y, allPoints[k + 1].x, allPoints[k + 1].y));
-                }
             }
-            public bool IsValidPosition(double xpos, double ypos)
+            public void moveCar(double xEnd, double yEnd, double velocity)
             {
-                foreach (link l in allLinks)
-                {
-                    if ((l.slope) * (xpos - l.x1) + l.y1 == ypos && l.x1 - ((ypos - l.y1) / (l.slope)) == xpos)
-                        return true;
-                    else
-                        return false;
-                }
-                return false;
+                this.xEnd = xEnd;
+                this.yEnd = yEnd;
+                this.velocity = velocity;
+                duration = distance2Points(this.xStart, this.yStart, xEnd, yEnd) / velocity;
+                time = time + duration;
+                
             }
-    }
-        
+            public double distance2Points (double x1, double y1, double x2, double y2)
+            {
+                return Math.Sqrt(((x2 - x1) *(x2- x1)) + ((y2 - y1) *(y2- y1)));
+            }
+        }
         public struct node
         {
             public string id;
@@ -169,4 +218,8 @@ namespace Map
             }
         }
     }
+
+
+        
+}
 
