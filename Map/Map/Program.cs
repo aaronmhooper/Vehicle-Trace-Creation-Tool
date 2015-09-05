@@ -23,6 +23,8 @@ namespace Map
             double minLon = 0;
             double maxLon = 0;
             string roadType = "";
+            string osmFile = args[0];
+            int numOfCars = Convert.ToInt32(args[1]);
             List<node> allNodes = new List<node>();
             List<point> tempPoints = new List<point>();
             List<link> allLinks = new List<link>();
@@ -32,12 +34,15 @@ namespace Map
             Random rnd = new Random();
 
             XmlDocument xDoc = new XmlDocument();
-            xDoc.Load("map.osm");
+            xDoc.Load(osmFile);
             XmlNode bounds = xDoc.SelectSingleNode("//osm/bounds");
             minLat = Convert.ToDouble(bounds.Attributes["minlat"].Value);
             maxLat = Convert.ToDouble(bounds.Attributes["maxlat"].Value);
             minLon = Convert.ToDouble(bounds.Attributes["minlon"].Value);
             maxLon = Convert.ToDouble(bounds.Attributes["maxlon"].Value);
+            StreamWriter outFile = new StreamWriter("trace.txt");
+            int maxWidth =Convert.ToInt32(distance(minLat, minLon, minLat, maxLon));
+            int maxHeight =Convert.ToInt32(distance(minLat, minLon, maxLat, minLon));
             XmlNodeList allNodeTags = xDoc.SelectNodes("//osm/node");
             XmlNodeList wayNodeTags = xDoc.SelectNodes("//osm/way");
             XmlNodeList child;
@@ -52,6 +57,7 @@ namespace Map
                 {
                     wayNodes.Add(a.Attributes["ref"].Value);
                 }
+                
                 child = n.SelectNodes(".//tag");
                 foreach(XmlNode b in child)
                 {
@@ -74,48 +80,78 @@ namespace Map
                         }
                     }
                 }
+                
+                    
                 tempPoints.Clear();
                 wayNodes.Clear();
             } 
-            
-            for(int i=0; i<100; i++)
+            for(int i=0; i<numOfCars; i++)
             {
                 int index = rnd.Next(allLinks.Count);
                 allCars.Add(new Car(allLinks[index].x1, allLinks[index].y1, index, carID));
                 carID++;
             }
-            
-            /*while (true)
+
+            while (allCars[0].time<=2000)
             {
                 foreach (Car c in allCars)
                 {
                     if (c.time <= 2000)
                     {
-                        Console.Write("\"" + c.time.ToString("0000.00") + " " + c.id + " " + c.xStart + " " + c.yStart + " ");
-                        c.moveCar(allLinks[c.linkIndex].x2, allLinks[c.linkIndex].y2, allLinks[c.linkIndex].velocity);
+                        outFile.Write(c.time.ToString("0000.00") + ", " + c.id + ", " + c.xStart + ", " + c.yStart + ", ");
+                        if (c.xStart == allLinks[c.linkIndex].x1)
+                            c.moveCar(allLinks[c.linkIndex].x2, allLinks[c.linkIndex].y2, allLinks[c.linkIndex].velocity);
+                        else if (c.xStart == allLinks[c.linkIndex].x2)
+                            c.moveCar(allLinks[c.linkIndex].x1, allLinks[c.linkIndex].y1, allLinks[c.linkIndex].velocity);
                         for (int i = 0; i < allLinks.Count; i++)
                         {
-                            if (allLinks[c.linkIndex].x2 == allLinks[i].x1 && allLinks[c.linkIndex].y2 == allLinks[i].y1)
+                            if (c.xEnd == allLinks[i].x1 && c.yEnd == allLinks[i].y1)
+                            {
                                 c.linkIndex = i;
-                            else
-                                Console.Write("error");
+                                
+                            }
+                            else if(c.xEnd == allLinks[i].x2 && c.yEnd == allLinks[i].y2)
+                            {
+                                c.linkIndex = i;
+                            }
                             
                         }
-                        Console.Write(c.xEnd + " " + c.yEnd + " " + c.duration.ToString("0.00") + "\",\n");
+                        outFile.Write(c.xEnd + ", " + c.yEnd + ", " + c.duration.ToString("0.00"));
                         c.xStart = c.xEnd;
                         c.yStart = c.yEnd;
-                        c.xEnd = allLinks[c.linkIndex].x2;
-                        c.yEnd = allLinks[c.linkIndex].y2;
+                        if (c.xStart == allLinks[c.linkIndex].x1)
+                        {
+                            c.xEnd = allLinks[c.linkIndex].x2;
+                            c.yEnd = allLinks[c.linkIndex].y2;
+                        }
+                        else if (c.xStart == allLinks[c.linkIndex].x2)
+                        {
+                            c.xEnd = allLinks[c.linkIndex].x1;
+                            c.yEnd = allLinks[c.linkIndex].y1;
+                        }
                     }
                 }
-            }*/
+            }
+            using (Bitmap b = new Bitmap(maxWidth, maxHeight))
+            {
+                using (Graphics g = Graphics.FromImage(b))
+                {
+                    g.Clear(Color.White);
+                    foreach (link l in allLinks)
+                    {
+                        g.DrawLine(Pens.Red,Convert.ToSingle(l.x1), Convert.ToSingle(l.y1), Convert.ToSingle(l.x2), Convert.ToSingle(l.y2));
+                    }
+                }
+                b.Save("map.png");
+            }
+            Console.WriteLine("Dimensions are: " + maxWidth + " X " + maxHeight);
             
         }
         struct link
         {
             private string roadType;
             public double x1, y1, x2, y2, velocity;
-            public link(double x1, double x2, double y1, double y2, string roadType)
+            public link(double x1, double y1, double x2, double y2, string roadType)
             {
                 this.roadType = roadType;
                 this.x1 = x1;
